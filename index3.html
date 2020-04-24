@@ -1,0 +1,138 @@
+<html>
+
+<head>
+    <title>Webcam Input Test</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+
+<body>
+    <video id="video" style="display: none"></video>
+    <canvas id="canvas"></canvas>
+    <script src="three.min.js"></script>
+    <script src="DeviceOrientationControls.js"></script>
+    <script>
+        function initWebcamInput(w, h) {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: w,
+                        height: h,
+                        facingMode: {
+                            exact: 'environment'
+                        }
+                    }
+                }).then(stream => {
+
+                    video.srcObject = stream
+                    video.play();
+
+                    var texture = new THREE.VideoTexture(video);
+                    texture.minFilter = THREE.LinearFilter;
+                    texture.magFilter = THREE.LinearFilter;
+                    texture.format = THREE.RGBFormat;
+
+                    scene.background = texture
+
+                });
+            }
+        }
+    </script>
+    <script>
+        var scene, renderer;
+        var camera, orientationControl;
+
+        function start() {
+            canvas.requestFullscreen().then(() => {
+                setTimeout(function () {
+                    init();
+                    animate();
+                    setTimeout(function () {
+                        initWebcamInput(window.innerHeight, window.innerWidth); //purposely reversed, else the output is squished
+                    }, 0);
+                }, 10)
+            })
+
+            window.removeEventListener('click', start)
+        }
+        window.addEventListener('click', start)
+
+        // init the scene
+        function init() {
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                canvas: canvas
+            });
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // create a scene
+            scene = new THREE.Scene();
+
+            // put a camera in the scene
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.set(-5, 15, 5)
+            scene.add(camera);
+
+            orientationControl = new THREE.DeviceOrientationControls(camera, true);
+            orientationControl.connect();
+
+            var ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+            scene.add(ambientLight)
+
+            var box = new THREE.Mesh(
+                            new THREE.BoxBufferGeometry(1, 1, 1),
+                            new THREE.MeshPhongMaterial({color: 0x00ff00}));
+            box.position.set(0, 1, -10)
+            box.castShadow = true;
+            scene.add(box)
+
+            var geometry = new THREE.BoxBufferGeometry(100, 0.5, 100)
+            var material = new THREE.ShadowMaterial()
+            material.opacity = 0.5
+            var ground = new THREE.Mesh(geometry, material);
+            ground.receiveShadow = true;
+            scene.add(ground)
+
+            var spotLight = new THREE.SpotLight( 0xffffff, 0.5 );
+            spotLight.position.set( 10, 10, 0 );
+            spotLight.castShadow = true;
+
+            spotLight.shadow.mapSize.width = 1024;
+            spotLight.shadow.mapSize.height = 1024;
+            scene.add(spotLight);
+
+            camera.lookAt(box.position)
+        }
+
+        // animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            orientationControl.update()
+
+            // do the render
+            render();
+        }
+
+        // render the scene
+        function render() {
+            // actually render the scene
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+
+</html>

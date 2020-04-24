@@ -1,0 +1,74 @@
+<html>
+
+<head>
+    <title>Dopolnennoy</title>
+    <style>
+        html,
+        body {
+            font-size: 1.8em;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        Acceleration<br>
+
+        <span id="acc_x">x</span><br>
+        <span id="acc_y">y</span><br>
+        <span id="acc_z">z</span>
+    </div>
+    <div style="display:none;">
+        Location<br>
+        
+        <span id="loc_x">x</span><br>
+        <span id="loc_y">y</span><br>
+        <span id="loc_z">z</span>
+    </div>
+    
+    <span>Chart:</span>
+    <canvas style="width:500px; height: 500px;" id='chart'></canvas>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+    <script>
+        var count = 0
+        let laSensor = new LinearAccelerationSensor({
+            frequency: 60
+        });
+
+        laSensor.addEventListener('reading', () => {
+            acc_x.innerText = ((laSensor.x > 0) ? '+' : '') + laSensor.x
+            acc_y.innerText = ((laSensor.y > 0) ? '+' : '') + laSensor.y
+            acc_z.innerText = ((laSensor.z > 0) ? '+' : '') + laSensor.z
+
+            my_line_chart.data.labels.push('')
+            my_line_chart.data.datasets[0].data.push(laSensor.x)
+            my_line_chart.update()
+        });
+        laSensor.start();
+
+        var my_line_chart = new Chart(chart.getContext('2d'), {
+            type: 'line',
+
+            data: {
+                labels: [],
+                datasets: [{
+                    fill: false,
+                    label: 'accelerometer samples',
+                    borderColor: 'rgb(255, 99, 132)',
+                    data: [],
+                    lineTension: 0,
+                }]
+            },
+
+            options: {
+                maintainAspectRatio: false,
+                responsive: false,
+                animation: false,
+            }
+        });
+    </script>
+</body>
+
+</html>

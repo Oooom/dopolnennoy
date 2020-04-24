@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Three.js Boilerplate</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+    <script src="three.min.js"></script>
+    <script src="TrackballControls.js"></script>
+
+    <style>
+        body {
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+
+            color: #222;
+            background-color: #BBB;
+            font-family: arial;
+            font-size: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- three.js container -->
+    <div id="container"></div>
+    <!-- info on screen display -->
+
+    <script src=""></script>
+
+    <script type="text/javascript">
+        var scene, renderer;
+        var camera, cameraControls;
+
+        init();
+        animate();
+
+        // init the scene
+        function init() {
+            renderer = new THREE.WebGLRenderer({
+                antialias: true, // to get smoother output
+            });
+            renderer.setClearColor(0xffffff);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // create a scene
+            scene = new THREE.Scene();
+
+            // put a camera in the scene
+            camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.set(0, 50, 80);
+            scene.add(camera);
+
+            cameraControls = new THREE.TrackballControls(camera, renderer.domElement)
+
+            // Objects
+            var geometry = new THREE.BoxBufferGeometry(100, 0.5, 100)
+            var material = new THREE.ShadowMaterial()
+            material.opacity = 0.5
+            var ground = new THREE.Mesh(geometry, material);
+            ground.receiveShadow = true;
+            
+            var box = new THREE.Mesh(new THREE.BoxBufferGeometry(5, 5, 5), new THREE.MeshPhongMaterial({color: 0xff0000}));
+            box.castShadow = true;
+            box.position.set(0, 5, 0)
+            
+            var box2 = new THREE.Mesh(new THREE.BoxBufferGeometry(1, 1, 1), new THREE.MeshPhongMaterial({color: 0x00ff00}));
+            box2.castShadow = true;
+            box2.position.set(-15, 0, 0)
+
+            var ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+
+            var spotLight = new THREE.SpotLight( 0xffffff, 0.5 );
+            spotLight.position.set( 10, 10, 0 );
+            spotLight.castShadow = true;
+
+            spotLight.shadow.mapSize.width = 1024;
+            spotLight.shadow.mapSize.height = 1024;
+            
+            scene.add(spotLight);
+            scene.add(ambientLight)
+            scene.add(box);
+            scene.add(box2);
+            scene.add(ground);
+        }
+
+        // animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            cameraControls.update();
+
+            // do the render
+            render();
+        }
+
+        // render the scene
+        function render() {
+            // actually render the scene
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+
+</html>
