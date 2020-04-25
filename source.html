@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+</head>
+
+<body>
+    <span id = "status_text"></span>
+    <script>
+        var socket = new WebSocket('wss://192.168.43.191:8443/lasensorplot');
+        socket.onopen = () => console.log('Connected') || socket.send(JSON.stringify({type: 'source'}))
+        socket.onclose = (event) => console.log((event.wasClean) ? 'Disconnected' : 'Connection break: ' + (event.reason || event.code));
+        socket.onmessage = (event) => status_text.innerHTML += `<br>(${event.data})`;
+        socket.onerror = (err) => status_text.innerHTML += `<br>(${err.message})`;
+
+        let laSensor = new LinearAccelerationSensor({
+            frequency: 60
+        });
+
+        laSensor.addEventListener('reading', () => {
+            socket.send(JSON.stringify({x: laSensor.x, y: laSensor.y, z: laSensor.z}))
+        });
+        laSensor.start();
+    </script>
+</body>
+
+</html>

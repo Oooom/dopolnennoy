@@ -6,6 +6,7 @@ var certificate = fs.readFileSync('keys/cert.pem', 'utf8');
 var credentials = { key: privateKey, cert: certificate };
 var express = require('express');
 var app = express();
+const ws = require('ws');
 
 // your express configuration here
 
@@ -14,11 +15,35 @@ httpsServer.listen(8443, function(e){
     console.log( getIPAddressList() )
 });
 
+const wss = new ws.Server({ server: httpsServer, path: '/lasensorplot' });
+
+var source, sink
+
+wss.on('connection', function connection(ws) {
+    ws.on('message', (data) => {
+        var response = JSON.parse(data)
+        
+        if(response.type == 'source'){
+            source = ws
+        }
+        else if(response.type == 'sink'){
+            sink = ws
+        }else{
+            sink.send(data)
+        }
+    });
+});
 app.get('/index', function (req, res) {
     res.sendFile(__dirname + "/index.html");
 });
 app.get('/index3', function (req, res) {
     res.sendFile(__dirname + "/index3.html");
+});
+app.get('/sink', function (req, res) {
+    res.sendFile(__dirname + "/sink.html");
+});
+app.get('/source', function (req, res) {
+    res.sendFile(__dirname + "/source.html");
 });
 app.get('/three.min.js', function (req, res) {
     res.sendFile(__dirname + "/three.min.js");
@@ -28,6 +53,9 @@ app.get('/manifest.json', function (req, res) {
 });
 app.get('/DeviceOrientationControls.js', function (req, res) {
     res.sendFile(__dirname + "/DeviceOrientationControls.js");
+});
+app.get('/kalman.js', function (req, res) {
+    res.sendFile(__dirname + "/kalman.js");
 });
 
 

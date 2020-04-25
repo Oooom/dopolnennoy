@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+</head>
+
+<body>
+    <div id="chart">
+    </div>
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="kalman.js"></script>
+    <script>
+        var socket = new WebSocket('wss://localhost:8443/lasensorplot');
+        socket.onopen = () => console.log('Connected') || socket.send(JSON.stringify({
+            type: 'sink'
+        }))
+        socket.onclose = (event) => status_text.innerHTML +=
+            `<br>${(event.wasClean) ? 'Disconnected' : 'Connection break: ' + (event.reason || event.code)}`
+        socket.onerror = (err) => status_text.innerHTML += `<br>(${err.message})`;
+
+        socket.onmessage = (event) => {
+            var response = JSON.parse(event.data)
+
+            Plotly.extendTraces('chart', {
+                y: [
+                    [response.x],
+                    [kf.filter(response.x)]
+                ]
+            }, [0, 1], 400)
+        }
+
+        var kf = new KalmanFilter()
+            
+        Plotly.plot('chart', [{
+                y: [0],
+                type: 'line'
+            },{
+                y: [kf.filter(0)],
+                type: 'line'
+            }],
+            {
+                yaxis: {
+                    autorange: true,
+                    range: [-5.0, 5.0],
+                    type: 'linear'
+                }
+            }
+        );
+    </script>
+</body>
+
+</html>
