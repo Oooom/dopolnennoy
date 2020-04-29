@@ -8,8 +8,11 @@
 <body>
     <span id = "status_text"></span>
     <script>
-        var socket = new WebSocket('wss://192.168.43.191:8443/lasensorplot');
-        socket.onopen = () => console.log('Connected') || socket.send(JSON.stringify({type: 'source'}))
+        var socket = new WebSocket('wss://192.168.1.105:8443/lasensorplot');
+        socket.onopen = () =>{
+            status_text.innerText = "CONNECTED"
+            socket.send(JSON.stringify({type: 'source'}))
+        } 
         socket.onclose = (event) => console.log((event.wasClean) ? 'Disconnected' : 'Connection break: ' + (event.reason || event.code));
         socket.onmessage = (event) => status_text.innerHTML += `<br>(${event.data})`;
         socket.onerror = (err) => status_text.innerHTML += `<br>(${err.message})`;
@@ -18,8 +21,17 @@
             frequency: 60
         });
 
+        var obj_to_send = {x: 0, y: 0, z: 0}
         laSensor.addEventListener('reading', () => {
-            socket.send(JSON.stringify({x: laSensor.x, y: laSensor.y, z: laSensor.z}))
+            obj_to_send.x = laSensor.x
+            obj_to_send.y = laSensor.y
+            obj_to_send.z = laSensor.z
+
+            if(obj_to_send.x <= 0.015 && obj_to_send.x >= -0.015){
+                obj_to_send.x = 0
+            }
+
+            socket.send(JSON.stringify(obj_to_send))
         });
         laSensor.start();
     </script>

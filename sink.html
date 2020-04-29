@@ -6,10 +6,13 @@
 </head>
 
 <body>
-    <div id="chart">
+    <div id="acc_chart">
+    </div>
+    <div id="displacement_chart">
     </div>
 
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="low_pass_filter.js"></script>
     <script src="kalman.js"></script>
     <script>
         var socket = new WebSocket('wss://localhost:8443/lasensorplot');
@@ -20,34 +23,99 @@
             `<br>${(event.wasClean) ? 'Disconnected' : 'Connection break: ' + (event.reason || event.code)}`
         socket.onerror = (err) => status_text.innerHTML += `<br>(${err.message})`;
 
+        var position_naive = {
+            x: 0,
+            y: 0,
+            z: 0
+        }
+        var velocity_naive = {
+            x: 0,
+            y: 0,
+            z: 0
+        }
+        
+        var position_trapeze = {
+            x: 0,
+            y: 0,
+            z: 0
+        }
+        var velocity_trapeze = {
+            x: 0,
+            y: 0,
+            z: 0
+        }
+        var old_acc_x = 0
+        var old_velocity_x = 0
+
+        var count_no_movement = 0
+        var dt = 16 / 1000
+
         socket.onmessage = (event) => {
             var response = JSON.parse(event.data)
 
-            Plotly.extendTraces('chart', {
+            if(response.x == 0){
+                count_no_movement++
+            }else{
+                count_no_movement = 0
+            }
+            
+            if(count_no_movement >= 2){
+                velocity_naive.x = 0
+                velocity_trapeze.x = 0
+                count_no_movement = 1
+            }
+            
+            //naive way
+            velocity_naive.x += response.x
+            position_naive.x += velocity_naive.x
+            
+            //my way
+            velocity_trapeze.x += old_acc_x * dt + (Math.abs(old_acc_x - response.x)/2)*dt
+            position_trapeze.x += old_velocity_x * dt + (Math.abs(old_velocity_x - velocity_trapeze.x)/2)*dt
+
+            //freescale paper way @TODO
+
+            old_acc_x = response.x
+            old_velocity_x = velocity_trapeze.x
+            
+            Plotly.extendTraces('acc_chart', {
                 y: [
-                    [response.x],
-                    [kf.filter(response.x)]
+                    [response.x]
+                ]
+            }, [0], 400)
+
+            Plotly.extendTraces('displacement_chart', {
+                y: [
+                    [position_naive.x/position_naive.x],
+                    [position_trapeze.x]
                 ]
             }, [0, 1], 400)
         }
 
-        var kf = new KalmanFilter()
-            
-        Plotly.plot('chart', [{
-                y: [0],
-                type: 'line'
-            },{
-                y: [kf.filter(0)],
-                type: 'line'
-            }],
-            {
-                yaxis: {
-                    autorange: true,
-                    range: [-5.0, 5.0],
-                    type: 'linear'
-                }
-            }
-        );
+        Plotly.plot('acc_chart', [{
+            y: [0],
+            type: 'line'
+        }], {
+            autosize: false,
+            width: 1500,
+            height: 350,
+        }, {
+            displayModeBar: false
+        });
+
+        Plotly.plot('displacement_chart', [{
+            y: [0],
+            type: 'line'
+        },{
+            y: [0],
+            type: 'line'
+        }], {
+            autosize: false,
+            width: 1500,
+            height: 350,
+        }, {
+            displayModeBar: false
+        });
     </script>
 </body>
 

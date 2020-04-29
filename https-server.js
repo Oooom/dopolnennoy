@@ -57,6 +57,9 @@ app.get('/DeviceOrientationControls.js', function (req, res) {
 app.get('/kalman.js', function (req, res) {
     res.sendFile(__dirname + "/kalman.js");
 });
+app.get('/low_pass_filter.js', function (req, res) {
+    res.sendFile(__dirname + "/low_pass_filter.js");
+});
 
 
 function getIPAddressList(){
